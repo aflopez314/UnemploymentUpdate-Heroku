@@ -1,0 +1,149 @@
+<html>
+   <head>
+   	<link href="https://fonts.googleapis.com/css?family=Roboto&display=swap" rel="stylesheet"/>
+      <a href="/">Home</a>
+   	<a href="/Login">Login/Register</a>
+      <h1>Update Form</h1>
+   </head>
+
+   <body>
+      <div id="TableForm">
+         <div id="Form">
+            <form action = "{{ url_for('addrec') }}" method = "POST">
+               <h3>Update Information</h3>
+            
+               Site<br>
+               <input type="text" name="Site" /></br>
+               Position<br>
+               <input type="text" textarea name="Position" ></textarea><br>
+               AppDate<br>
+               <input type="date" name="AppDate" /><br>
+               Response<br>
+               <input type="text" name ="Response" /><br>
+               Interview<br>
+               <input type="text" name ="Interview" /><br>
+            
+               <input type = "submit" value = "submit" /><br>
+            </form>
+
+            <form action="{{ url_for('addfile') }}" method="POST" enctype="multipart/form-data">
+               <h3>Upload File (CSV only)</h3>
+
+               <input type="file" name="file">
+               <input type="submit" value="Upload">
+            </form>
+         </div>
+         <div id="Table">
+            <table id="tableinfo">
+	            <caption>Table of Jobs Applied (Click Header of Table to De-select)</caption>
+	            <thead>
+                  <tr>
+   	               <td>Site</td>
+   	               <td>Position</td>
+   	               <td>AppDate</td>
+   	               <td>Response</td>
+   	               <td>Interview</td>
+                  </tr>
+	            </thead>
+	            
+	            {% for row in rows %}
+	               <tr>
+	                  <td>{{row["site"]}}</td>
+	                  <td>{{row["position"]}}</td>
+	                  <td> {{ row["appdate"]}}</td>
+	                  <td> {{ row["response"]}}</td>
+	                  <td> {{ row["interview"]}}</td>
+	               </tr>
+	            {% endfor %}
+         	</table>
+         </div>
+      </div>
+   </body>
+   <style type="text/css">
+      html{font-family: 'Roboto', sans-serif;}
+      thead{background-color: lightgrey; color: white;}
+      td{border: 1px #ddd solid; padding: 5px; cursor: pointer;}
+      form{padding: 10px;}
+
+      #Overall{
+         display: flex;
+      }
+       #DeleteForm{
+         display: grid;
+         height:160px;
+         width: 120px;
+         margin-right: 25vw;
+      }
+      #TableForm{
+       justify-content: space-around;
+      }
+      .selected{
+         background-color: dimgrey;
+         color: snow;
+      }
+      .deleteButton{
+         background-color: crimson;
+         border: none;
+         color: snow;
+         text-align: center;
+         padding: 8px 25px;
+         cursor: pointer;
+      }
+   </style>
+   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+   <script type="text/javascript">
+      $("#tableinfo tbody tr").click(function(){
+         $(this).addClass('selected').siblings().removeClass('selected')
+         $("#tableinfo tbody tr").children().remove(".deleteButton")
+         $("#tableinfo tbody tr.selected").append(' <input type="submit" class="deleteButton" onclick="submit()" value="Delete This Record">')
+         var values=$(this).text()
+      });
+
+      $("#tableinfo thead").click(function(){
+         $(this).siblings().children().removeClass("selected")
+         $(this).siblings().find('input').remove(".deleteButton")
+      });
+
+      function submit(){
+         var keys=$("#tableinfo thead tr").children().toArray()
+         var values=$("#tableinfo tbody tr.selected").children().toArray()
+
+         var keysTextList=[];
+         var valuesTextList=[];
+         // var jData = {};
+         var jObject = new Object();
+
+         for (var i=0; i < keys.length; i++){
+            keysTextList.push(keys[i].innerHTML);
+         }
+         for (var i=0; i < values.length-2; i++){
+           valuesTextList.push(values[i].innerHTML);
+         }
+
+         // keysTextList.forEach(function(k,i){
+         //    jData[k] = valuesTextList[i]
+         // });
+
+         keysTextList.forEach(function(k,i){
+            jObject[k] = valuesTextList[i]
+         });
+         
+         var jObjectData = JSON.stringify(jObject);
+
+         var urlFinal = "{{ url_for('deleterec') }}"
+
+         $.ajax({
+            type:"POST",
+            contentType: "application/json; charset=utf-8",
+            url: urlFinal,
+            data: jObjectData,
+            success: function(response){
+               document.write(response)
+               // window.location.replace(urlFinal)
+            }
+          });   
+         // alert(jData)
+         // $("#hiddenForm").submit();
+      }
+   </script>
+</html>
