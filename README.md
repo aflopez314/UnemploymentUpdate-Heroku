@@ -25,3 +25,9 @@ and infrastructure for this single-list structured radar chart.
 
 [Radar Chart]: http://bl.ocks.org/nbremer/21746a9668ffdf6d8242
 [here]: https://github.com/aflopez314/UnemploymentUpdate-SQLite
+
+
+Update 3/13/2021
+----------------------
+* Added update feature for response section
+* Circle data growth rate changed
