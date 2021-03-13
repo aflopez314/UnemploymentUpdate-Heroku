@@ -1,0 +1,27 @@
+<html>
+<link href="https://fonts.googleapis.com/css?family=Roboto&display=swap" rel="stylesheet">
+   <body>
+      
+      <table border = 1>
+         <thead>
+            <td>Area</td>
+            <td>Commodity</td>
+            <td>InstalledQty</td>
+         </thead>
+         
+         {% for row in rows %}
+            <tr>
+               <td>{{row["Area"]}}</td>
+               <td>{{row["Commodity"]}}</td>
+               <td> {{ row["InstalledQty"]}}</td>	
+            </tr>
+         {% endfor %}
+      </table>
+      
+      <a href = "/">Go back to home page</a>
+   </body>
+   <style type="text/css">
+      table{font-family: 'Roboto', sans-serif;}
+
+   </style>>
+</html>

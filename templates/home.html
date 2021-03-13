@@ -1,0 +1,303 @@
+<html>
+   <head>
+      <meta name="viewport" content="width=device-width, initial-scale=1"  property="og:image" content="{{ url_for('static', filename='thumbnail.PNG') }}">
+   	<link href="https://fonts.googleapis.com/css?family=Roboto&display=swap" rel="stylesheet"/>
+   	<a href="/Login">Login/Register</a>
+      <a href="/StackInfo">Stack Info</a>
+   </head>
+
+   <body>
+      <div id="Overall">
+         <div id="WebGraph">
+
+         </div>
+
+         <div id="About">
+         	<h1>Angel Felix Lopez Zamora</h1>
+         	<h3>B.A., History of Art and Visual Culture</h3>
+         	<h3>M.S., Urban Planning - Urban Analytics + Economic Development</h3>
+         	<br>
+         	<p>This data visualization is of my job seeking progress during unemployment.</p>
+         	<p>Graduated with honors in my major and dean's honors at UC Santa Cruz (2013),</p>
+         	<p>Graduated with multiple internships and a prestigous fellowship while at Columbia University (2018),</p>
+         </div>
+         
+         <div id="BarGraph">
+            
+         </div>
+
+         <div id="CodingDisclaimer">
+            <div id="TotalsSummary"></div>
+            <p>*Radar Chart is based on Nadieh Bremer's <a href="http://bl.ocks.org/nbremer/21746a9668ffdf6d8242">Radar Chart.</a> The chart was updated for d3.js-V6 and single list data structure.</p>
+         </div>
+
+      </div>
+   </body>
+   <style type="text/css">
+      html{
+         font-family: 'Roboto', sans-serif;
+      }
+      #Overall{
+        display: grid;
+         grid-template: 500px / auto auto;
+         grid-row-gap: 75px;
+        justify-content: space-between;
+      }
+      #About{
+      	text-align: left;
+      }
+      #CodingDisclaimer p{
+         position: relative;
+         bottom: 0;
+         font-size: 14px;
+         font-size: .73vw;
+      }
+      .axis path, .axis line{
+         fill: none;
+         stroke: #000;
+         shape-rendering: crispEdges;
+      }
+      #xAxisName, #yAxisName{
+         font-size: 11px;
+      }
+   </style>
+
+   <script src="{{ url_for('static', filename='radarChart.js') }}"></script>
+   <script src="https://d3js.org/d3.v6.min.js"></script>
+   <script type="text/javascript">
+      //Define Chart and Variables//
+      var width= 600, height=300, svgWidth=640, svgHeight=380;
+      var parseDate = d3.timeParse('%m-%Y');
+      var x = d3.scaleBand().rangeRound([0, width]).padding(0.5);
+      var y = d3.scaleLinear().range([height, 0])
+
+      var xAxis = d3.axisBottom(x)
+         .tickFormat(d3.timeFormat('%m-%Y'));
+
+      var yAxis = d3.axisLeft(y)
+         .ticks(5);
+
+      var svgBarGraph = d3.select('#BarGraph')
+      .append('svg')
+      .attr('width', svgWidth)
+      .attr('height', svgHeight)
+      .append('g')
+      .attr('transform', 'translate(25,5)');
+
+      var svgWebGraph = d3.select('#WebGraph')
+      .append('svg')
+      .attr('width', width)
+      .attr('height', height)
+
+      var svgTotalsGraph = d3.select('#TotalsSummary')
+      .append('svg')
+      .attr('width', svgWidth)
+      .attr('height', svgHeight)
+      .append('g')
+
+      //Load Json promise data//
+      const d3Data = d3.json("{{ url_for('d3Data') }}").then(function(data){
+         return data
+      });
+
+      //Use Json promise data and turn into list//
+      const dateCountList = d3Data.then(function(value){
+            var nestDates = d3.group(value, d => d.appdate.split('/')[0] + "-" + d.appdate.split('/')[2])
+            nestDatesTotals = d3.rollups(nestDates, v => d3.sum(v[0][1], d => d.sitecounts), d => parseDate(d[0]))
+            // console.log(nestDatesTotals)
+
+            return nestDatesTotals
+      });
+
+      dateCountList.then(function(list){
+         // console.log(list)
+
+         var sortedList = list.sort((a, b) => d3.ascending(a[0], b[0]));
+         // console.log(sortedList)
+
+         x.domain(sortedList.map(function(d) { return d[0]; }));
+         y.domain([0, d3.max(sortedList, function(d) { return d[1]; })]);
+
+         svgBarGraph.append('g')
+         .attr('class', 'chartTitle')
+         .attr('transform', 'translate(' + width/1.7 + ', 15)')
+         .style('fill', 'black')
+         .append('text')
+         .text('Jobs Applied by Month')
+
+         svgBarGraph.append('g')
+            .attr('class', 'x axis')
+            .attr('transform', 'translate(0,' + height + ')')
+            .call(xAxis)
+            .selectAll('text')
+            .style('text-anchor', 'end')
+            .attr('dx', '-.81em')
+            .attr('dy', '-.51em')
+            .attr('transform', 'rotate(-90)')
+
+         svgBarGraph.append('g')
+            .attr('class', 'y axis')
+            .style('fill', 'black')
+            .call(yAxis)
+            .append('text')
+            .attr('transform', 'rotate(-90)')
+            .attr('y', 6)
+            .attr('dy', '.71em')
+            .style('text-anchor', 'end')
+            .text('Number of Jobs Applied')
+            .attr('id', 'yAxisName');
+
+         svgBarGraph.selectAll('bar')
+            .data(sortedList)
+            .enter()
+            .append('rect')
+            .style('fill', 'black')
+            .attr('x', function(d) { return x(d[0]); })
+            .attr('width', x.bandwidth())
+            .attr('y', function(d) { return y(d[1]); })
+            .attr('height', function(d) { return height - y(d[1]); });
+         });
+
+      const webGraphData = d3.json("{{ url_for('webGraphData') }}").then(function(data){
+         return data
+      });
+
+      const webGraphRadarData = webGraphData.then(function(list){
+         var Planning = [{"sector": "Urban Planning"}, [/Plan/, /City/]]
+         var Analyst = [{"sector": "Data Analysis and Management"}, [/Analys/, /Scien/, /Engine/, /Visualiz/, /Data/]]
+         var PManagement = [{"sector": "Project Management"}, [/Coordinat/, /Manage/, /Schedul/]]
+         var DLabor = [{"sector": "Direct Labor"}, [/Work/,/Electri/]]
+
+         list.forEach(function(i){
+            Planning[1].forEach(function(e){
+               if ( e.test(i.position) ){
+               i.sector = Planning[0].sector
+            }
+            });
+
+            Analyst[1].forEach(function(e){
+               if ( e.test(i.position) ){
+               i.sector = Analyst[0].sector
+            }
+            });
+
+            PManagement[1].forEach(function(e){
+               if ( e.test(i.position) ){
+               i.sector = PManagement[0].sector
+            }
+            });
+
+            DLabor[1].forEach(function(e){
+               if ( e.test(i.position) ){
+               i.sector = DLabor[0].sector
+            }
+            });
+            
+         });
+
+         var fixedDecimal = d3.format('.2f');
+
+         var nestedSectors = d3.groups(list, d => d.sector);
+         nestedSectorPercentages = d3.rollups( nestedSectors, v=> +fixedDecimal(d3.sum(v, d => d[1].length)/list.length), d => d[0] );
+
+         var SectorPercentArrays = []
+
+         nestedSectorPercentages.forEach(function(i){
+            var SectorPercentData = new Object() ;
+            SectorPercentData.axis = i[0], SectorPercentData.value = i[1];
+
+            SectorPercentArrays.push(SectorPercentData);
+          });
+
+
+         // console.log(nestedSectors)
+         // console.log(nestedSectorPercentages)
+         // console.log(SectorPercentArrays)
+
+         return SectorPercentArrays
+      });
+
+      const webGraphDataPlot = webGraphRadarData.then(function(radarData){ 
+         // console.log(radarData)
+         var color = d3.scaleOrdinal(["#EDC951","#CC333F","#00A0B0", "#993299"]);
+
+         var radarChartOptions = {
+           w: 600,
+           h: 300,
+           margin: 20,
+           maxValue: 0.5,
+           levels: 5,
+           roundStrokes: true,
+           color: color
+         };
+
+         RadarChart('#WebGraph', radarData, radarChartOptions)
+      });
+
+      const circleData = d3.json("{{ url_for('circleData') }}").then(function(data){
+         return data
+      });
+
+      circleData.then(function(jData){
+         var color = ["#4c4c4c", "#000000", "#7F9371"]
+
+         svgTotalsGraph.selectAll('circle')
+            .data(jData)
+            .enter()
+            .append('circle')
+            .style('fill', function(d,i){ return color[i] })
+            .attr('cx', function(d,i){ return i* 150 + width/2.2 })
+            .attr('cy',function(d,i){ return height/2 })
+            .attr('r', function(d,i){ if (d.responsecounts < 30) { return d.responsecounts*8; } else { return d.responsecounts*1.2; }})
+            
+         var groupWrapper = svgTotalsGraph.append('g')
+            .attr('class', 'groupWrapper')
+
+         groupWrapper.selectAll('text')
+            .data(jData)
+            .enter()
+            .append("text")
+            .attr('x', function(d,i){ return i* 150 + width/2.308 })
+            .attr('y',function(d,i){ return height/2 })
+            .text(function(d,i){ return d.response })
+            .attr('font-size', '9')
+            .style('fill', 'snow')
+            .style('fill-opacity', '0.35')
+
+         var groupCountWrapper = svgTotalsGraph.append('g')
+            .attr('class', 'groupCountWrapper')
+
+         groupCountWrapper.selectAll('text')
+            .data(jData)
+            .enter()
+            .append("text")
+            .attr('x', function(d,i){ return i* 150 + width/2.206})
+            .attr('y',function(d,i){ return height/1.85 })
+            .text(function(d,i){ return d.responsecounts })
+            .attr('font-size', '9')
+            .style('fill', 'snow')
+            .style('fill-opacity', '0.7')
+
+         var totalWrapper = svgTotalsGraph.append('g')
+            .attr('class', 'totalWrapper')
+
+         var totalList = []
+
+         totalCount = d3.rollup(jData, d => d3.sum(d, i => i.responsecounts))
+         totalList.push(totalCount)
+
+         totalWrapper.selectAll('text')
+         .data(totalList)
+         .enter()
+         .append('text')
+         .attr('x', function(d,i){ return i* 150 + width/1.8})
+         .attr('y',function(d,i){ return height/1.1 })
+         .text(function(d,i){ return "Total Jobs Applied: " + d })
+         .attr('font-size', '12')
+         .style('fill', 'black')
+         .style('fill-opacity', '0.7')
+            
+});
+
+   </script>
+</html>
